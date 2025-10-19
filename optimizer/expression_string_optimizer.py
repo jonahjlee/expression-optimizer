@@ -14,25 +14,25 @@ class Operator(Enum):
 
 class UnaryOperator(Operator):
     MINUS = '-'
-    # BITWISE_NOT = '~'
+    BITWISE_NOT = '~'
 
 class BinaryOperator(Operator):
     pass # subclasses distinguish commutative/noncommutative
 
 class BinaryNonCommutativeOperator(BinaryOperator):
-    # BIT_SHIFT_LEFT = '<<'
-    # BIT_SHIFT_RIGHT = '>>'
+    BIT_SHIFT_LEFT = '<<'
+    BIT_SHIFT_RIGHT = '>>'
     SUBTRACT = '-'
-    # EXPONENTIATE = '**'
+    EXPONENTIATE = '**'
     INT_DIVIDE = '//'
-    # MODULO = '%'
+    MODULO = '%'
 
 class BinaryCommutativeOperator(BinaryOperator):
     ADD = '+'
     MULTIPLY = '*'
-    # BITWISE_AND = '&'
-    # BITWISE_OR = '|'
-    # BITWISE_XOR = '^'
+    BITWISE_AND = '&'
+    BITWISE_OR = '|'
+    BITWISE_XOR = '^'
 
 
 # =============================================================================
@@ -218,21 +218,21 @@ class ExpressionOptimizer:
                     # Non-commutative operators
                     for op in BinaryNonCommutativeOperator:
 
-                        # if (op in [BinaryNonCommutativeOperator.BIT_SHIFT_LEFT,
-                        #     BinaryNonCommutativeOperator.BIT_SHIFT_RIGHT]):
-                        #
-                        #     shift_count = expr_2.evaluate()
-                        #
-                        #     # Cannot bit-shift by negative value,
-                        #     # and bit-shift by zero is pointless
-                        #     if shift_count <= 0:
-                        #         continue
-                        #
-                        #     # Cap bit shift counts to avoid insanely large numbers
-                        #     # NOTE: technically this invalidates min-s guarantee!
-                        #     elif (self._max_bit_shift is not None
-                        #         and shift_count > self._max_bit_shift):
-                        #         continue
+                        if (op in [BinaryNonCommutativeOperator.BIT_SHIFT_LEFT,
+                            BinaryNonCommutativeOperator.BIT_SHIFT_RIGHT]):
+
+                            shift_count = expr_2.evaluate()
+
+                            # Cannot bit-shift by negative value,
+                            # and bit-shift by zero is pointless
+                            if shift_count <= 0:
+                                continue
+
+                            # Cap bit shift counts to avoid insanely large numbers
+                            # NOTE: technically this invalidates min-s guarantee!
+                            elif (self._max_bit_shift is not None
+                                and shift_count > self._max_bit_shift):
+                                continue
 
                         new_exprs.append(CompositeExpression(op, expr_1, expr_2))
 
@@ -252,11 +252,11 @@ if __name__ == "__main__":
     # Python doesn't like it when you do ~True, because it thinks you're doing it by mistake! I am not.
     warnings.filterwarnings("ignore", category=DeprecationWarning)
 
-    output_csv = Path.cwd().parent / "outputs" / "arithmetic.csv"
+    output_csv = Path(__file__).parent.parent / "outputs" / "out.csv"
 
     optimizer = ExpressionOptimizer(out_file=output_csv)
 
-    while optimizer.max_score < 100:
+    while optimizer.max_score < 5:
         try:
             # optimizer.get_min_s_exprs()
             # optimizer.print_newest_exprs()
