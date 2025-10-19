@@ -252,7 +252,7 @@ if __name__ == "__main__":
     # Python doesn't like it when you do ~True, because it thinks you're doing it by mistake! I am not.
     warnings.filterwarnings("ignore", category=DeprecationWarning)
 
-    output_csv = Path.cwd() / "arithmetic.csv"
+    output_csv = Path.cwd().parent / "outputs" / "arithmetic.csv"
 
     optimizer = ExpressionOptimizer(out_file=output_csv)
 
