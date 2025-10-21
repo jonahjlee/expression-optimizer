@@ -10,19 +10,20 @@ from expressions.operator import UnaryOperator, BinaryCommutativeOperator, Binar
 # =============================================================================
 
 class ExpressionOptimizer:
-    def __init__(self, out_file: Path=None, max_bit_shift=None) -> None:
+    def __init__(self, out_file: Path=None, max_bit_shift=None, max_abs_target=None) -> None:
 
         # Open output file
         if out_file is not None:
             self._out_file = open(out_file, 'w')
-            self._out_file.write(f"Score, Target, Expression\n")
-            self._out_file.write(f"1, 1, True\n")
+            self._out_file.write(f"Score,Target,Expression\n")
+            self._out_file.write(f"1,1,True\n")
         else:
             self._out_file = None
 
-        # Maximum allowed bit shift
-        # If this is not None, ExpressionOptimizer cannot guarantee min-s for all targets found
+        # Maximum allowed bit shift & |target|
+        # If either are not None, ExpressionOptimizer cannot guarantee min-s for all targets found
         self._max_bit_shift = max_bit_shift
+        self._max_abs_target = max_abs_target
 
         # ExpressionOptimizer contains an expression for all targets which can
         # be reached with a score less than or equal to `_max_score`
@@ -45,28 +46,27 @@ class ExpressionOptimizer:
 
     def _add_expr_if_better(self, expr: Expression, console_print: bool=False) -> bool:
 
-        # Check if expression is valid
+        target = expr.evaluate()
+
         try:
-            target = expr.evaluate()
-        except ZeroDivisionError:
-            return False
+            value_str = str(target)
+        except ValueError:
+            value_str = "Too large to print!"
+
+        line_out = f"{expr.score},{value_str},{expr.string}"
+        if console_print:
+            print(line_out)
 
         if target in self._targs.keys():
             # An equal or better expression was already found
             return False
 
-        # New target reached!
+        # New target reached! Save internally and, if enabled, write to file
         self._targs[target] = expr
         self._min_s_exprs[expr.score] = self._min_s_exprs.get(expr.score, []) + [expr]
         if self._out_file is not None:
-            try:
-                value_str = str(target)
-            except ValueError:
-                value_str = "Too large to print!"
-            line_out = f"{expr.score},{value_str},{expr.string}"
             self._out_file.write(line_out + "\n")
-            if console_print:
-                print(line_out)
+
         return True
 
     def get_min_s_exprs(self):
@@ -151,11 +151,24 @@ class ExpressionOptimizer:
                         new_exprs.append(CompositeExpression(op, expr_1, expr_2))
 
         for new_expr in new_exprs:
-            self._add_expr_if_better(new_expr, console_print=print_new)
+            if self._validate_expr(new_expr):
+                self._add_expr_if_better(new_expr, console_print=print_new)
 
         self._max_score += 1
 
         return len(self._get_score_exprs(self._max_score))
+
+    def _validate_expr(self, expr):
+
+        try:
+            target = expr.evaluate()
+        except ZeroDivisionError:
+            return False
+
+        if self._max_abs_target is not None and abs(target) > self._max_abs_target:
+            return False
+
+        return True
 
 
 # =============================================================================
@@ -168,9 +181,9 @@ if __name__ == "__main__":
 
     output_csv = Path.cwd() / "outputs" / "out.csv"
 
-    optimizer = ExpressionOptimizer(out_file=output_csv)
+    optimizer = ExpressionOptimizer(out_file=output_csv, max_abs_target=10000)
 
-    while optimizer.max_score < 5:
+    while optimizer.max_score < 30:
         try:
             # optimizer.get_min_s_exprs()
             # optimizer.print_newest_exprs()
